@@ -16,6 +16,14 @@
 #include <atomic>
 #include "gl.h"
 
+#include <direct.h>
+#include <fstream>
+#include <io.h>
+#include <iomanip>
+#include <sstream>
+#include <vector>
+#include <miniz.h>
+
 #ifndef BUILD_NUM_STRING
 #define BUILD_NUM_STRING ""
 #endif
@@ -37,6 +45,7 @@ void showDebugFlagsGUI();
 void showViewportGUI();
 void showSceneGUI();
 void showMarkerGUI();
+bool saveCurrentSnapshot();
 
 constexpr double double_tap_time = 0.5; // seconds
 constexpr double scroll_span_multiplier = 0.05; // scaling for zoom and rotation
@@ -78,6 +87,8 @@ double last_x_velocity = 0.0;
 double last_y_velocity = 0.0;
 
 bool wireframe_mode = false;
+std::atomic<int> snapshot_counter{0};
+std::string snapshot_status;
 bool show_gui = true;
 bool load_async = true;
 bool add_point_marker_on_click = false;
@@ -734,8 +745,14 @@ void showViewportGUI() {
         if (ImGui::SliderAngle("Rotation", &camera.rotation, 0.f, 360.f)) {
             map->setCameraPosition(camera);
         }
-        if (ImGui::SliderAngle("Rolll", &camera.roll, -180.f, 180.f)) {
+        if (ImGui::SliderAngle("Roll", &camera.roll, -180.f, 180.f)) {
             map->setCameraPosition(camera);
+        }
+        if (ImGui::Button("Save Snapshot")) {
+            saveCurrentSnapshot();
+        }
+        if (!snapshot_status.empty()) {
+            ImGui::TextWrapped("%s", snapshot_status.c_str());
         }
         EdgePadding padding = map->getPadding();
         if (ImGui::InputInt4("Left/Top/Right/Bottom", &padding.left)) {
@@ -785,6 +802,68 @@ void showDebugFlagsGUI() {
         }
         ImGui::Checkbox("Wireframe Mode", &wireframe_mode);
     }
+}
+
+bool saveCurrentSnapshot() {
+    if (!map) {
+        snapshot_status = "Snapshot failed: map is null";
+        return false;
+    }
+
+    const int w = map->getViewportWidth();
+    const int h = map->getViewportHeight();
+
+    if (w <= 0 || h <= 0) {
+        snapshot_status = "Snapshot failed: invalid viewport size";
+        return false;
+    }
+
+    std::vector<unsigned int> pixels(w * h);
+    map->captureSnapshot(pixels.data());
+
+    _mkdir("captures");
+
+    std::string outFile;
+    for (;;) {
+        std::ostringstream name;
+        name << "captures/frame_" << std::setw(4) << std::setfill('0') << snapshot_counter.load() << ".png";
+        outFile = name.str();
+
+        if (_access(outFile.c_str(), 0) != 0) {
+            snapshot_counter++;
+            break;
+        }
+
+        snapshot_counter++;
+    }
+
+    size_t pngSize = 0;
+    void* pngData = tdefl_write_image_to_png_file_in_memory_ex(
+        pixels.data(), w, h, 4, &pngSize, MZ_DEFAULT_LEVEL, MZ_TRUE);
+
+    if (!pngData || pngSize == 0) {
+        snapshot_status = "Snapshot failed: PNG encode error";
+        return false;
+    }
+
+    std::ofstream file(outFile, std::ios::binary);
+    if (!file) {
+        mz_free(pngData);
+        snapshot_status = "Snapshot failed: cannot open output file";
+        return false;
+    }
+
+    file.write(static_cast<const char*>(pngData), static_cast<std::streamsize>(pngSize));
+    mz_free(pngData);
+
+    if (!file.good()) {
+        snapshot_status = "Snapshot failed: write error";
+        return false;
+    }
+
+    snapshot_status = "Saved snapshot to " + outFile;
+    LOG("Saved snapshot to %s", outFile.c_str());
+    return true;
 }
 
 } // namespace GlfwApp
