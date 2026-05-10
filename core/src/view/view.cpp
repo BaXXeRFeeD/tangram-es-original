@@ -722,19 +722,23 @@ void View::getVisibleTiles(const std::function<void(TileID)>& _tileCb) const {
     // Sample the perimeter of the viewport conservatively. Four corners are not always enough
     // when the camera has large tilt + roll because the ground footprint can bulge past the
     // quadrilateral implied by corner rays alone.
-    std::array<glm::dvec2, 12> screenSamples = {{
-        {0.0,              double(m_vpHeight)},
-        {double(m_vpWidth) * 0.5, double(m_vpHeight)},
-        {double(m_vpWidth), double(m_vpHeight)},
-        {double(m_vpWidth), double(m_vpHeight) * 0.5},
-        {double(m_vpWidth), 0.0},
-        {double(m_vpWidth) * 0.5, 0.0},
-        {0.0,              0.0},
-        {0.0,              double(m_vpHeight) * 0.5},
-        {double(m_vpWidth) * 0.25, double(m_vpHeight)},
-        {double(m_vpWidth) * 0.75, double(m_vpHeight)},
-        {double(m_vpWidth) * 0.75, 0.0},
-        {double(m_vpWidth) * 0.25, 0.0},
+    std::array<glm::dvec2, 16> screenSamples = {{
+        {0.0,                            double(m_vpHeight)},        // left bottom
+        {double(m_vpWidth) * 0.25,       double(m_vpHeight)},        // bottom 1/4
+        {double(m_vpWidth) * 0.5,        double(m_vpHeight)},        // bottom center
+        {double(m_vpWidth) * 0.75,       double(m_vpHeight)},        // bottom 3/4
+        {double(m_vpWidth),              double(m_vpHeight)},        // right bottom
+        {double(m_vpWidth),              double(m_vpHeight) * 0.75}, // right 3/4
+        {double(m_vpWidth),              double(m_vpHeight) * 0.5},  // right center
+        {double(m_vpWidth),              double(m_vpHeight) * 0.25}, // right 1/4
+        {double(m_vpWidth),              0.0},                       // right top
+        {double(m_vpWidth) * 0.75,       0.0},                       // top 3/4
+        {double(m_vpWidth) * 0.5,        0.0},                       // top center
+        {double(m_vpWidth) * 0.25,       0.0},                       // top 1/4
+        {0.0,                            0.0},                       // left top
+        {0.0,                            double(m_vpHeight) * 0.25}, // left 1/4
+        {0.0,                            double(m_vpHeight) * 0.5},  // left center
+        {0.0,                            double(m_vpHeight) * 0.75}, // left 3/4
     }};
 
     std::vector<glm::dvec2> footprint;
