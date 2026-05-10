@@ -44,5 +44,10 @@ target_link_libraries(tangram
   wsock32 ws2_32 crypt32 wldap32
 )
 
-get_nextzen_api_key(NEXTZEN_API_KEY)
+set(NEXTZEN_API_KEY $ENV{NEXTZEN_API_KEY})
+if("${NEXTZEN_API_KEY}" STREQUAL "")
+  message(WARNING
+    "NEXTZEN_API_KEY is not set. The default Nextzen demo scene may not load map data. "
+    "You can still build and run scenes that do not depend on Nextzen, for example scenes/raster-simple.yaml.")
+endif()
 target_compile_definitions(tangram PRIVATE NEXTZEN_API_KEY="${NEXTZEN_API_KEY}")

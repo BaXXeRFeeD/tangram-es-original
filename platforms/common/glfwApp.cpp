@@ -612,6 +612,15 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
             case GLFW_KEY_F11: // Tehran
                 map->setCameraPosition({51.42086, 35.7409, 13.5});
                 break;
+            case GLFW_KEY_F12:
+                camera.longitude = 21.35970;
+                camera.latitude = 43.98160;
+                camera.zoom = 17.13869f;
+                camera.tilt = 1.37881f;
+                camera.rotation = 0.89012f;
+                camera.roll = 3.97935f;
+                map->setCameraPosition(camera);
+                break;
             case GLFW_KEY_W:
                 map->onMemoryWarning();
                 break;
@@ -723,6 +732,9 @@ void showViewportGUI() {
             map->setCameraPosition(camera);
         }
         if (ImGui::SliderAngle("Rotation", &camera.rotation, 0.f, 360.f)) {
+            map->setCameraPosition(camera);
+        }
+        if (ImGui::SliderAngle("Rolll", &camera.roll, -180.f, 180.f)) {
             map->setCameraPosition(camera);
         }
         EdgePadding padding = map->getPadding();
