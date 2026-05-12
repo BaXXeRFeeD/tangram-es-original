@@ -94,6 +94,7 @@ bool load_async = true;
 bool add_point_marker_on_click = false;
 bool add_polyline_marker_on_click = false;
 bool point_markers_position_clipped = false;
+bool pending_snapshot = false;
 
 struct PointMarker {
     MarkerID markerId;
@@ -294,6 +295,11 @@ void run() {
         if(wireframe) {
             glPolygonMode(GL_FRONT, GL_FILL);
             glPolygonMode(GL_BACK, GL_FILL);
+        }
+
+        if (pending_snapshot) {
+            saveCurrentSnapshot();
+            pending_snapshot = false;
         }
 
         if (show_gui) {
@@ -749,7 +755,7 @@ void showViewportGUI() {
             map->setCameraPosition(camera);
         }
         if (ImGui::Button("Save Snapshot")) {
-            saveCurrentSnapshot();
+            pending_snapshot = true;
         }
         if (!snapshot_status.empty()) {
             ImGui::TextWrapped("%s", snapshot_status.c_str());

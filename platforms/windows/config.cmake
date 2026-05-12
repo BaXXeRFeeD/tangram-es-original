@@ -30,6 +30,7 @@ target_include_directories(tangram
   PRIVATE
   platforms/common
   platforms/common/glfw/deps
+  core/deps/miniz
   ${CURL_INCLUDE_DIRS}
 )
 
